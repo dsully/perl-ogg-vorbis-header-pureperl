@@ -1,4 +1,4 @@
-Ogg/Vorbis/Header/PurePerl version 0.01
+Ogg/Vorbis/Header/PurePerl version 1.0
 =======================================
 
 Ogg::Vorbis::Header::PurePerl - An object-oriented interface to Ogg Vorbis
@@ -9,11 +9,6 @@ This module is intended to be a drop in replacement for Ogg::Vorbis::Header,
 implemented entirely in Perl.  It provides an object-oriented interface to
 Ogg Vorbis information and comment fields.  (NOTE: This module currently 
 supports only read operations).
-
-NOTE
-
-This is ALPHA SOFTWARE.  It may very well be very broken.  Do not use it in
-a production environment.  You have been warned.
 
 INSTALLATION
 
@@ -27,6 +22,8 @@ To install this module type the following:
 COPYRIGHT AND LICENCE
 
 Copyright (c) 2003, Andrew Molloy.  All Rights Reserved.
+
+Copyright (c) 2005-2008, Dan Sully.  All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
