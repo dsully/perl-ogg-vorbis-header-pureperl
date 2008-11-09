@@ -9,6 +9,11 @@ Revision history for Perl extension Ogg::Vorbis::Header::PurePerl.
 
 	- Skip ID3 tags if they exist.
 
+	- Ogg tag parser was badly broken and would fail if the amount of tag
+	  data was > 8K or exceeded one page.  Rewrote the comment parsing
+	  routine based on code from Image::ExifTool::Vorbis.  Also fixed the
+	  cover art code as it was also broken: from Andy Grundman
+
 0.05  Wed Jan  7 17:17:54 2004
 	- Fixed "load" method to be more compatible with 
           Ogg::Vorbis::Header

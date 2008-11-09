@@ -1,7 +1,5 @@
 package Ogg::Vorbis::Header::PurePerl;
 
-# $Id$
-
 use 5.005;
 use strict;
 use warnings;
@@ -13,27 +11,40 @@ our $VERSION = '1.0';
 
 sub new {
 	my $class = shift;
-	my $file = shift;
+	my $file  = shift;
 
-	# open up the file
-	open FILE, $file or do {
-		warn "$class: File $file does not exist or cannot be read: $!";
-		return undef;
-	};
+	my %data  = ();
 
-	# make sure dos-type systems can handle it...
-	binmode FILE;
+	if (ref $file) {
+		binmode $file;
 
-	my %data = (
-		'filename'   => $file,
-		'filesize'   => -s $file,
-		'fileHandle' => \*FILE,
-	);
+		%data = (
+			'filesize'   => -s $file,
+			'fileHandle' => $file,
+		);
 
-	_init(\%data);
-	_loadInfo(\%data);
-	_loadComments(\%data);
-	_calculateTrackLength(\%data);
+	} else {
+
+		open FILE, $file or do {
+			warn "$class: File $file does not exist or cannot be read: $!";
+			return undef;
+		};
+
+		# make sure dos-type systems can handle it...
+		binmode FILE;
+
+		%data = (
+			'filename'   => $file,
+			'filesize'   => -s $file,
+			'fileHandle' => \*FILE,
+		);
+	}
+
+	if ( _init(\%data) ) {
+		_loadInfo(\%data);
+		_loadComments(\%data);
+		_calculateTrackLength(\%data);
+	}
 
 	undef $data{'fileHandle'};
 	close FILE;
@@ -67,7 +78,9 @@ sub comment {
 	# if the user supplied key does not exist, return undef
 	return undef unless($self->{'COMMENTS'}{lc $key});
 
-	return @{$self->{'COMMENTS'}{lc $key}};
+	return wantarray 
+		? @{$self->{'COMMENTS'}{lc $key}}
+		: $self->{'COMMENTS'}{lc $key}->[0];
 }
 
 sub path {
@@ -77,29 +90,38 @@ sub path {
 }
 
 # "private" methods
-
 sub _init {
 	my $data = shift;
 
 	# check the header to make sure this is actually an Ogg-Vorbis file
 	$data->{'startInfoHeader'} = _checkHeader($data) || return undef;
+	
+	return 1;
 }
 
 sub _skipID3Header {
 	my $fh = shift;
 
-	my $byteCount = 0;
+	read $fh, my $buffer, 3;
+	
+	my $byteCount = 3;
+	
+	if ($buffer eq 'ID3') {
 
-	while (read($fh, my $buffer, 4)) {
+		while (read $fh, $buffer, 4096) {
 
-		if ($buffer eq OGGHEADERFLAG) {
-
-			seek($fh, $byteCount, 0);
-			last;
+			my $found;
+			if (($found = index($buffer, OGGHEADERFLAG)) >= 0) {
+				$byteCount += $found;
+				seek $fh, $byteCount, 0;
+				last;
+			} else {
+				$byteCount += 4096;
+			}
 		}
 
-		$byteCount++;
-		seek($fh, $byteCount, 0);
+	} else {
+		seek $fh, 0, 0;
 	}
 
 	return tell($fh);
@@ -116,6 +138,9 @@ sub _checkHeader {
 	# skip right past all of the header stuff
 
 	my $byteCount = _skipID3Header($fh);
+	
+	# Remember the start of the Ogg data
+	$data->{startHeader} = $byteCount;
 
 	# check that the first four bytes are 'OggS'
 	read($fh, $buffer, 27);
@@ -180,7 +205,7 @@ sub _loadInfo {
 	my $data = shift;
 
 	my $start = $data->{'startInfoHeader'};
-	my $fh = $data->{'fileHandle'};
+	my $fh    = $data->{'fileHandle'};
 
 	my $byteCount = $start + 23;
 	my %info = ();
@@ -225,99 +250,160 @@ sub _loadInfo {
 }
 
 sub _loadComments {
-
 	my $data = shift;
-	my $fh = $data->{'fileHandle'};
-	my $start = $data->{'startCommentHeader'};
-	my $page_segments;
-	my $vendor_length;
-	my $user_comment_count;
-	my $byteCount = $start;
+
+	my $fh    = $data->{'fileHandle'};
+	my $start = $data->{'startHeader'};
+
+	$data->{COMMENT_KEYS} = [];
+
+	# Comment parsing code based on Image::ExifTool::Vorbis
+	my $MAX_PACKETS = 2;
+	my $done;
+	my ($page, $packets, $streams) = (0,0,0,0);
+	my ($buff, $flag, $stream, %val);
+
+	seek $fh, $start, 0;
+
+	while (1) {	
+		if (!$done && read( $fh, $buff, 28 ) == 28) {
+			# validate magic number
+			unless ( $buff =~ /^OggS/ ) {
+				warn "No comment header?";
+				last;
+			}
+
+			$flag   = Get8u(\$buff, 5);	# page flag
+			$stream = Get32u(\$buff, 14);	# stream serial number
+			++$streams if $flag & 0x02;	# count start-of-stream pages
+			++$packets unless $flag & 0x01; # keep track of packet count
+		}
+		else {
+			# all done unless we have to process our last packet
+			last unless %val;
+			($stream) = sort keys %val;     # take a stream
+			$flag = 0;                      # no continuation
+			$done = 1;                      # flag for done reading
+		}
+		
+		# can finally process previous packet from this stream
+		# unless this is a continuation page
+		if (defined $val{$stream} and not $flag & 0x01) {
+			_processComments( $data, \$val{$stream} );
+			delete $val{$stream};
+			# only read the first $MAX_PACKETS packets from each stream
+			if ($packets > $MAX_PACKETS * $streams) {
+				# all done (success!)
+				last unless %val;
+				# process remaining stream(s)
+				next;
+			}
+		}
+
+		# stop processing Ogg Vorbis if we have scanned enough packets
+		last if $packets > $MAX_PACKETS * $streams and not %val;
+		
+		# continue processing the current page
+		# page sequence number
+		my $pageNum = Get32u(\$buff, 18);
+
+		# number of segments
+		my $nseg    = Get8u(\$buff, 26);
+
+		# calculate total data length
+		my $dataLen = Get8u(\$buff, 27);
+		
+		if ($nseg) {
+			read( $fh, $buff, $nseg-1 ) == $nseg-1 or last;
+			my @segs = unpack('C*', $buff);
+			# could check that all these (but the last) are 255...
+			foreach (@segs) { $dataLen += $_ }
+		}
+
+		if (defined $page) {
+			if ($page == $pageNum) {
+				++$page;
+			} else {
+				warn "Missing page(s) in Ogg file\n";
+				undef $page;
+			}
+		}
+		
+		# read page data
+		read($fh, $buff, $dataLen) == $dataLen or last;
+
+		if (defined $val{$stream}) {
+			# add this continuation page
+			$val{$stream} .= $buff;
+		} elsif (not $flag & 0x01) {
+			# ignore remaining pages of a continued packet
+			# ignore the first page of any packet we aren't parsing
+			if ($buff =~ /^(.)vorbis/s and ord($1) == 3) {
+				# save this page, it has comments
+				$val{$stream} = $buff;
+			}
+		}
+		
+		if (defined $val{$stream} and $flag & 0x04) {
+			# process Ogg Vorbis packet now if end-of-stream bit is set
+			_processComments($data, \$val{$stream});
+			delete $val{$stream};
+		}
+	}
+	
+	$data->{'INFO'}{offset} = tell $fh;
+}
+
+sub _processComments {
+	my ( $data, $dataPt ) = @_;
+	
+	my $pos = 7;
+	my $end = length $$dataPt;
+	
+	my $num;
 	my %comments;
-
-	seek($fh, $start, 0);
-	read($fh, my $buffer, 8192);
-
-	# check that the first four bytes are 'OggS'
-	if (substr($buffer, 0, 4, '') ne OGGHEADERFLAG) {
-		warn "No comment header?";
-		return undef;
+	
+	while (1) {
+		last if $pos + 4 > $end;
+		my $len = Get32u($dataPt, $pos);
+		last if $pos + 4 + $len > $end;
+		my $start = $pos + 4;
+		my $buff = substr($$dataPt, $start, $len);
+		$pos = $start + $len;
+		my ($tag, $val);
+		if (defined $num) {
+			$buff =~ /(.*?)=(.*)/s or last;
+			($tag, $val) = ($1, $2);
+		} else {
+			$tag = 'vendor';
+			$val = $buff;
+			$num = ($pos + 4 < $end) ? Get32u($dataPt, $pos) : 0;
+			$pos += 4;
+		}
+		
+		my $lctag = lc $tag;
+		
+		push @{$comments{$lctag}}, $val;
+		push @{$data->{COMMENT_KEYS}}, $lctag;
+		
+		# all done if this was our last tag
+		if ( !$num-- ) {
+			$data->{COMMENTS} = \%comments;
+			return 1;
+		}
 	}
+	
+	warn "format error in Vorbis comments\n";
+	
+	return 0;
+}
 
-	$byteCount += 4;
+sub Get8u {
+	return unpack( "x$_[1] C", ${$_[0]} );
+}
 
-	# read the stream serial number
-	substr($buffer, 0, 10, '');
-	push @{$data->{'commentSerialNumber'}}, _decodeInt(substr($buffer, 0, 4, ''));
-	$byteCount += 14;
-
-	# read the page sequence number (should be 0x01)
-	if (_decodeInt(substr($buffer, 0, 4, '')) != 0x01) {
-		warn "Comment header page sequence number is not 0x01: " + _decodeInt($buffer);
-		warn "Going to keep going anyway.";
-	}
-	$byteCount += 4;
-
-	# get the number of entries in the segment_table...
-	substr($buffer, 0, 4, '');
-	$page_segments = _decodeInt(substr($buffer, 0, 1, ''));
-	$byteCount += 5;
-
-	# then skip on past it
-	substr($buffer, 0, $page_segments, '');
-	$byteCount += $page_segments;
-
-	# check the header type (should be 0x03)
-	if (ord(substr($buffer, 0, 1, '')) != 0x03) {
-		warn "Wrong header type: " . ord($buffer);
-	}
-	$byteCount += 1;
-
-	# now we should see 'vorbis'
-	if (substr($buffer, 0, 6, '') ne 'vorbis') {
-		warn "Missing comment header. Should have found 'vorbis', found $buffer\n";
-	}
-	$byteCount += 6;
-
-	# get the vendor length
-	$vendor_length = _decodeInt(substr($buffer, 0, 4, ''));
-	$byteCount += 4;
-
-	# read in the vendor
-	$comments{'vendor'} = substr($buffer, 0, $vendor_length, '');
-	$byteCount += $vendor_length;
-
-	# read in the number of user comments
-	$user_comment_count = _decodeInt(substr($buffer, 0, 4, ''));
-	$byteCount += 4;
-
-	# finally, read the comments
-	$data->{'COMMENT_KEYS'} = [];
-
-	for (my $i = 0; $i < $user_comment_count; $i++) {
-
-	# first read the length
-	my $comment_length = _decodeInt(substr($buffer, 0, 4, ''));
-		$byteCount += 4;
-
-		# then the comment itself
-		$byteCount += $comment_length;
-
-		my ($key, $value) = split(/=/, substr($buffer, 0, $comment_length, ''));
-
-		my $lcKey = lc($key);
-
-		push @{$comments{$lcKey}}, $value;
-		push @{$data->{'COMMENT_KEYS'}}, $lcKey;
-	}
-
-	# read past the framing_bit
-	$byteCount += 1;
-	seek($fh, $byteCount, 1);
-
-	$data->{'INFO'}{'offset'} = $byteCount;
-
-	$data->{'COMMENTS'} = \%comments;
+sub Get32u {
+	return unpack( "x$_[1] V", ${$_[0]} );
 }
 
 sub _calculateTrackLength {
@@ -361,7 +447,7 @@ sub _calculateTrackLength {
 		}
 	}
 
-	if (!$foundHeader) {
+	unless ($foundHeader) {
 		warn "Ogg::Vorbis::Header::PurePerl: Didn't find an ogg header - invalid file?\n";
 		return;
 	}
@@ -378,7 +464,8 @@ sub _calculateTrackLength {
  	my $granule_position = _decodeInt(substr($buf, 0, 8, ''));
 
 	if ($granule_position && $data->{'INFO'}{'rate'}) {
-		$data->{'INFO'}{'length'} = int($granule_position / $data->{'INFO'}{'rate'});
+		$data->{'INFO'}{'length'}          = int($granule_position / $data->{'INFO'}{'rate'});
+		$data->{'INFO'}{'bitrate_average'} = sprintf( "%d", ( $data->{'filesize'} * 8 ) / $data->{'INFO'}{'length'} );
 	}
 }
 
@@ -491,21 +578,16 @@ Unimplemented.
 
 Returns the path/filename of the file the object represents.
 
-=head1 NOTE
-
-This is ALPHA SOFTWARE.  It may very well be very broken.  Do not use it in
-a production environment.  You have been warned.
-
 =head1 AUTHOR
 
 Andrew Molloy E<lt>amolloy@kaizolabs.comE<gt>
 
-Dan Sully E<lt>daniel@cpan.orgE<gt>
+Dan Sully E<lt>daniel | at | cpan.orgE<gt>
 
 =head1 COPYRIGHT
-
+ 
 Copyright (c) 2003, Andrew Molloy.  All Rights Reserved.
-
+ 
 Copyright (c) 2005-2007, Dan Sully.  All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it
