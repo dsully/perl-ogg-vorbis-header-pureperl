@@ -496,8 +496,7 @@ information and comment fields, implemented entirely in Perl.  Intended to be
 a drop in replacement for Ogg::Vobis::Header.
 
 Unlike Ogg::Vorbis::Header, this module will go ahead and fill in all of the
-information fields as soon as you construct the object.  In other words,
-the C<new> and C<load> constructors have identical behavior. 
+information fields as soon as you construct the object.
 
 =head1 SYNOPSIS
 
@@ -524,13 +523,6 @@ supports only read operations).
 Opens an Ogg Vorbis file, ensuring that it exists and is actually an
 Ogg Vorbis stream.  This method does not actually read any of the
 information or comment fields, and closes the file immediately. 
-
-=head2 C<load ([$filename])>
-
-Opens an Ogg Vorbis file, ensuring that it exists and is actually an
-Ogg Vorbis stream, then loads the information and comment fields.  This
-method can also be used without a filename to load the information
-and fields of an already constructed instance.
 
 =head1 INSTANCE METHODS
 
@@ -588,7 +580,7 @@ Dan Sully E<lt>daniel | at | cpan.orgE<gt>
  
 Copyright (c) 2003, Andrew Molloy.  All Rights Reserved.
  
-Copyright (c) 2005-2007, Dan Sully.  All Rights Reserved.
+Copyright (c) 2005-2009, Dan Sully.  All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
