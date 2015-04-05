@@ -11,6 +11,8 @@ Revision history for Perl module Ogg::Vorbis::Header::PurePerl.
     - Added github repo to dist metadata and doc
     - Changed min perl version in code from 5.005 to 5.006, as "our ..."
       requires 5.006
+    - Setting PREREQ_PM, TEST_REQUIRES and CONFIGURE_REQUIRES as/if supported by
+      local version of ExtUtils::MakeMaker.
     - Min perl version added to dist metadata
 
 1.0 2008-11-09 DANIEL
