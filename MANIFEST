@@ -5,6 +5,6 @@ lib/Ogg/Vorbis/Header/PurePerl.pm
 README
 test.pl
 test.ogg
-ogginfo.pl
+examples/ogginfo.pl
 LICENSE.GPL
 META.yml                                 Module meta-data (added by MakeMaker)

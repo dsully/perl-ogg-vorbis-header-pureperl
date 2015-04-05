@@ -2,6 +2,7 @@ Revision history for Perl module Ogg::Vorbis::Header::PurePerl.
 
 1.01 2015-04-05
     - Moved PurePerl.pm to lib/Ogg/Vorbis/Header/PurePerl.pm
+    - Moved ogginfo.pl into examples/
     - Reformatted this file as per CPAN::Changes::Spec
 
 1.0 2008-11-09 DANIEL
