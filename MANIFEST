@@ -8,4 +8,3 @@ t/02-basic.t
 t/test.ogg
 examples/ogginfo.pl
 LICENSE.GPL
-META.yml                                 Module meta-data (added by MakeMaker)
