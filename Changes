@@ -17,34 +17,34 @@ Revision history for Perl module Ogg::Vorbis::Header::PurePerl.
 
 1.0 2008-11-09 DANIEL
 
-	- Massive refactoring for improved performance.
-	  http://svn.slimdevices.com/trunk/server/CPAN/Ogg/Vorbis/Header/PurePerl.pm?rev=2564&view=rev
+    - Massive refactoring for improved performance.
+      http://svn.slimdevices.com/trunk/server/CPAN/Ogg/Vorbis/Header/PurePerl.pm?rev=2564&view=rev
 
-	- Allow multiple comment keys of the same type for Vorbis comments.
+    - Allow multiple comment keys of the same type for Vorbis comments.
 
-	- Skip ID3 tags if they exist.
+    - Skip ID3 tags if they exist.
 
-	- Ogg tag parser was badly broken and would fail if the amount of tag
-	  data was > 8K or exceeded one page.  Rewrote the comment parsing
-	  routine based on code from Image::ExifTool::Vorbis.  Also fixed the
-	  cover art code as it was also broken: from Andy Grundman
+    - Ogg tag parser was badly broken and would fail if the amount of tag
+      data was > 8K or exceeded one page.  Rewrote the comment parsing
+      routine based on code from Image::ExifTool::Vorbis.  Also fixed the
+      cover art code as it was also broken: from Andy Grundman
 
 0.05 2004-01-08 AMOLLOY
-	- Fixed "load" method to be more compatible with 
+    - Fixed "load" method to be more compatible with 
           Ogg::Vorbis::Header
-	- Added some actual tests.
-	- Actually added a copy of the GPL License to the
-	  package (as promised in the POD documentation).
+    - Added some actual tests.
+    - Actually added a copy of the GPL License to the
+      package (as promised in the POD documentation).
 
 0.04 2004-01-07 AMOLLOY
-	- Applied patch from Dan Sully to make "startMainData"
-	  accessible from the Info interface.
+    - Applied patch from Dan Sully to make "startMainData"
+      accessible from the Info interface.
 
 0.03 2003-12-09 AMOLLOY
-	- Added fix from Robert Moser II for problems with files
-	  with no comments.
+    - Added fix from Robert Moser II for problems with files
+      with no comments.
 
 0.01 2003-01-20 AMOLLOY
-	- original version; created by h2xs 1.21
+    - original version; created by h2xs 1.21
       with options -XA -n Ogg::Vorbis::Header::PurePerl
 
