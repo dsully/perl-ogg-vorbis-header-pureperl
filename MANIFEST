@@ -1,7 +1,7 @@
 Changes
 Makefile.PL
 MANIFEST
-PurePerl.pm
+lib/Ogg/Vorbis/Header/PurePerl.pm
 README
 test.pl
 test.ogg
