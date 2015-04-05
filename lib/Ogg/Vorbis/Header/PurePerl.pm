@@ -568,6 +568,10 @@ Unimplemented.
 
 Returns the path/filename of the file the object represents.
 
+=head1 REPOSITORY
+
+L<https://github.com/dsully/perl-ogg-vorbis-header-pureperl>
+
 =head1 AUTHOR
 
 Andrew Molloy E<lt>amolloy@kaizolabs.comE<gt>

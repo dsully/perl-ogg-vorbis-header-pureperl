@@ -8,6 +8,7 @@ Revision history for Perl module Ogg::Vorbis::Header::PurePerl.
     - Reformatted this file as per CPAN::Changes::Spec
     - Changed abstract (=head1 NAME) section to follow convention
     - Specified license type (GPL) in metadata, to match doc.
+    - Added github repo to dist metadata and doc
     - Changed min perl version in code from 5.005 to 5.006, as "our ..."
       requires 5.006
     - Min perl version added to dist metadata
