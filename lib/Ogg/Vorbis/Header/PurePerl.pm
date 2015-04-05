@@ -568,6 +568,17 @@ Unimplemented.
 
 Returns the path/filename of the file the object represents.
 
+=head1 SEE ALSO
+
+L<Ogg::Vorbis::Decoder> - module for decoding Ogg Vorbis files.
+Requires a C compiler.
+
+L<Ogg::Vorbis::Header> - another module for accessing Ogg Vorbis header info.
+
+L<Ogg::Vorbis> - a perl interface to the
+L<libvorbisfile|http://www.xiph.org/vorbis/doc/vorbisfile/> library,
+for decoding and manipulating Vorbis audio streams.
+
 =head1 REPOSITORY
 
 L<https://github.com/dsully/perl-ogg-vorbis-header-pureperl>

@@ -6,10 +6,36 @@ if ($mm_ver =~ /_/) { # dev version
     die $@ if $@;
 }
 
+my @REQUIRES = (
+    'strict'    => 0,
+    'warnings'  => 0,
+    'constant'  => 0,
+);
+
+my @TEST_REQUIRES = (
+    'Test::More'    => 0.88,
+);
+
+push(@REQUIRES, @TEST_REQUIRES) if $mm_ver < 6.64;
+
 WriteMakefile(
 	'NAME'		=> 'Ogg::Vorbis::Header::PurePerl',
 	'VERSION_FROM'	=> 'lib/Ogg/Vorbis/Header/PurePerl.pm',
-	'PREREQ_PM'		=> {},
+
+	'PREREQ_PM'		=> { @REQUIRES },
+
+    ($mm_ver >= 6.64
+        ? (TEST_REQUIRES => { @TEST_REQUIRES })
+        : ()
+    ),
+
+    ($mm_ver >= 6.52
+        ? (CONFIGURE_REQUIRES => {
+                'ExtUtils::MakeMaker' => 6.30,
+          })
+        : ()
+    ),
+
 	($] >= 5.005 ?
 	(ABSTRACT_FROM => 'lib/Ogg/Vorbis/Header/PurePerl.pm',
 	AUTHOR     => 'Dan Sully <daniel@cpan.org>') : ()),
