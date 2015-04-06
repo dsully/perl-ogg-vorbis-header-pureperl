@@ -1,13 +1,13 @@
 package Ogg::Vorbis::Header::PurePerl;
 
-use 5.005;
+use 5.006;
 use strict;
 use warnings;
 
 # First four bytes of stream are always OggS
 use constant OGGHEADERFLAG => 'OggS';
 
-our $VERSION = '1.0';
+our $VERSION = '1.01';
 
 sub new {
 	my $class = shift;
@@ -491,12 +491,7 @@ __END__
 
 =head1 NAME
 
-Ogg::Vorbis::Header::PurePerl - An object-oriented interface to Ogg Vorbis
-information and comment fields, implemented entirely in Perl.  Intended to be 
-a drop in replacement for Ogg::Vobis::Header.
-
-Unlike Ogg::Vorbis::Header, this module will go ahead and fill in all of the
-information fields as soon as you construct the object.
+Ogg::Vorbis::Header::PurePerl - access Ogg Vorbis info and comment fields
 
 =head1 SYNOPSIS
 
@@ -515,6 +510,9 @@ This module is intended to be a drop in replacement for Ogg::Vorbis::Header,
 implemented entirely in Perl.  It provides an object-oriented interface to
 Ogg Vorbis information and comment fields.  (NOTE: This module currently 
 supports only read operations).
+
+Unlike Ogg::Vorbis::Header, this module will go ahead and fill in all of the
+information fields as soon as you construct the object.
 
 =head1 CONSTRUCTORS
 
@@ -569,6 +567,21 @@ Unimplemented.
 =head2 C<path ()>
 
 Returns the path/filename of the file the object represents.
+
+=head1 SEE ALSO
+
+L<Ogg::Vorbis::Decoder> - module for decoding Ogg Vorbis files.
+Requires a C compiler.
+
+L<Ogg::Vorbis::Header> - another module for accessing Ogg Vorbis header info.
+
+L<Ogg::Vorbis> - a perl interface to the
+L<libvorbisfile|http://www.xiph.org/vorbis/doc/vorbisfile/> library,
+for decoding and manipulating Vorbis audio streams.
+
+=head1 REPOSITORY
+
+L<https://github.com/dsully/perl-ogg-vorbis-header-pureperl>
 
 =head1 AUTHOR
 
